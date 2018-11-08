@@ -833,7 +833,7 @@ $('#payolution_installment_check_availability').click(
     
         $.ajax(
             {
-                url: 'modules/fc/fcpayone/application/models/fcpayone_ajax.php',
+                url: '[{$oViewConf->getBaseDir()}]modules/fc/fcpayone/application/models/fcpayone_ajax.php',
                 method: 'POST',
                 type: 'POST',
                 dataType: 'text',

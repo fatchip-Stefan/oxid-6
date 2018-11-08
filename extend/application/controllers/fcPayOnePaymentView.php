@@ -169,6 +169,22 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     }
 
     /**
+     * Method checks if user should log into shop for merging
+     *
+     * @param void
+     * @return void
+     */
+    public function fcpoAmazonUserLogin() {
+        $blAmazonMergeUserMandatory = (bool) $this->_oFcpoHelper->fcpoGetSessionVariable('fcpoAmazonMergeUserMandatory');
+        if ($blAmazonMergeUserMandatory) {
+            $oUtils = $this->_oFcpoHelper->fcpoGetUtils();
+            $oUtils->redirect('index.php?cl=user');
+        }
+
+        $this->render();
+    }
+
+    /**
      * Returns matched profile
      * 
      * @param  string $sPaymentId
@@ -662,6 +678,19 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     }
 
     /**
+     * Method returns active theme path by checking current theme and its parent
+     * If theme is not assignable, 'azure' will be the fallback
+     *
+     * @param void
+     * @return string
+     */
+    public function fcpoGetActiveThemePath() {
+        $oViewConfig = $this->_oFcpoHelper->getFactoryObject('oxViewConfig');
+
+        return $oViewConfig->fcpoGetActiveThemePath();
+    }
+
+    /**
      * Get verification safety hash for debitnote payment method with checktype parameter
      * 
      * @return string
@@ -775,6 +804,24 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     {
         $oConfig = $this->_oFcpoHelper->fcpoGetConfig();
         return $oConfig->getConfigParam('sFCPOCCType');
+    }
+
+    /**
+     * Method will be triggered by amazon checkout. Will make sure that paymentid is set to
+     * amazon payment
+     *
+     * @param void
+     * @return void
+     */
+    public function validateAmazonPayment() {
+        $oSession = $this->getSession();
+        $oBasket = $oSession->getBasket();
+
+        $this->_oFcpoHelper->fcpoDeleteSessionVariable('paymentid');
+        $this->_oFcpoHelper->fcpoSetSessionVariable('paymentid', 'fcpoamazonpay');
+        $oBasket->setPayment('fcpoamazonpay');
+
+        return 'order';
     }
 
     /**

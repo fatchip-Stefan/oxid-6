@@ -49,6 +49,12 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
      * @var string
      */
     protected $_sBarzahlenHtml = null;
+
+    /**
+     * Flag indicates if current order is/was of type amazon
+     * @var bool
+     */
+    protected $_blIsAmazonOrder = false;
     
     
     /**
@@ -67,7 +73,7 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
     /**
      * Returns generated mandate pdf url and deletes it from session afterwards
      * 
-     * @param  void
+     * @param void
      * @return string
      */
     public function fcpoGetMandatePdfUrl() 
@@ -111,21 +117,21 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
     
     
     /**
-     * Method checks for an appointment error
+     * Method checks if any error occured (appointment-error, fraud etc.)
      * 
-     * @param  void
+     * @param void
      * @return bool
      */
-    public function fcpoIsAppointedError() 
+    public function fcpoOrderHasProblems()
     {
-        $blReturn   = false;
         $oOrder     = $this->getOrder();
-        
-        if($oOrder->isPayOnePaymentType()) {
-            if($oOrder->oxorder__oxfolder->value == 'ORDERFOLDER_PROBLEMS' && $oOrder->oxorder__oxtransstatus->value == 'ERROR') {
-                $blReturn = true;
-            }
-        }
+        $blIsPayone = $oOrder->isPayOnePaymentType();
+
+        $blReturn = (
+            $blIsPayone &&
+            $oOrder->oxorder__oxfolder->value == 'ORDERFOLDER_PROBLEMS' &&
+            $oOrder->oxorder__oxtransstatus->value == 'ERROR'
+        );
         
         return $blReturn;
     }
@@ -134,7 +140,7 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
     /**
      * Sets userid into session berfore triggering the parent method
      * 
-     * @param  void
+     * @param void
      * @return string
      */
     public function render() 
@@ -143,17 +149,78 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
         if($oUser) {
             $this->_oFcpoHelper->fcpoSetSessionVariable('sFcpoUserId', $oUser->getId());
         }
+
+        $this->_fcpoHandleAmazonThankyou();
+        $this->_fcpoDeleteSessionVariablesOnOrderFinish();
         
         $sReturn = parent::render();
         
         return $sReturn;
     }
-    
+
+    /**
+     * Deletes session variables that should not last after finishing order
+     *
+     * @param void
+     * @return void
+     */
+    protected function _fcpoDeleteSessionVariablesOnOrderFinish()
+    {
+        $this->_oFcpoHelper->fcpoDeleteSessionVariable('fcpoRefNr');
+    }
+
+    /**
+     * Returns if current order is of type amazon
+     *
+     * @param void
+     * @return bool
+     */
+    public function fcpoIsAmazonOrder()
+    {
+        return $this->_blIsAmazonOrder;
+    }
+
+    /**
+     * Loggs off Amazon if this is an Amazon order
+     *
+     * @param void
+     * @return void
+     */
+    protected function _fcpoHandleAmazonThankyou()
+    {
+        $blIsAmazonOrder = $this->_fcpoDetermineAmazonOrder();
+        if ($blIsAmazonOrder) {
+            $this->_blIsAmazonOrder = true;
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('sAmazonLoginAccessToken');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('fcpoAmazonWorkorderId');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('fcpoAmazonReferenceId');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('fcpoAmazonPayAddressWidgetLocked');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('usr');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('fcpoAmazonPayOrderIsPending');
+        }
+    }
+
+    /**
+     * Checks if current order is of type amazon
+     *
+     * @param void
+     * @return bool
+     */
+    protected function _fcpoDetermineAmazonOrder() {
+        $blReturn = false;
+        $sAmazonLoginAccessToken = $this->_oFcpoHelper->fcpoGetSessionVariable('sAmazonLoginAccessToken');
+        if ($sAmazonLoginAccessToken) {
+            $blReturn = true;
+        }
+
+        return $blReturn;
+    }
+
     
     /**
      * Returns the html of barzahlen instructions
      * 
-     * @param  void
+     * @param void
      * @return mixed
      */
     public function fcpoGetBarzahlenHtml() 
@@ -165,6 +232,5 @@ class fcPayOneThankyouView extends fcPayOneThankyouView_parent
         }
         
         return $this->_sBarzahlenHtml;
-    }
-    
+    } 
 }

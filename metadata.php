@@ -1,6 +1,6 @@
 <?php
 
-/** 
+/**
  * PAYONE OXID Connector is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -39,6 +39,7 @@ $aModule = array(
     'extend'        => array(
         // controllers
         'basket'                            => 'fc/fcpayone/extend/application/controllers/fcPayOneBasketView',
+        'user'                              => 'fc/fcpayone/extend/application/controllers/fcPayOneUserView',
         'order'                             => 'fc/fcpayone/extend/application/controllers/fcPayOneOrderView',
         'payment'                           => 'fc/fcpayone/extend/application/controllers/fcPayOnePaymentView',
         'thankyou'                          => 'fc/fcpayone/extend/application/controllers/fcPayOneThankyouView',
@@ -82,6 +83,7 @@ $aModule = array(
         // controllers
         'fcpayoneiframe'                    => 'fc/fcpayone/application/controllers/fcpayoneiframe.php',
         // models
+	'fcpouserflag'                      => 'fc/fcpayone/application/models/fcpouserflag.php',
         'fcporequestlog'                    => 'fc/fcpayone/application/models/fcporequestlog.php',
         'fcpotransactionstatus'             => 'fc/fcpayone/application/models/fcpotransactionstatus.php',
         'fcpomapping'                       => 'fc/fcpayone/application/models/fcpomapping.php',
@@ -130,6 +132,36 @@ $aModule = array(
         'onDeactivate'                      => 'fcpayone_events::onDeactivate',
     ),
     'blocks'        => array(
+        array(
+            'template' => 'layout/base.tpl',
+            'block' => 'base_js',
+            'file' => 'fcpo_base_js_extend'
+        ),
+        array(
+            'template' => 'layout/base.tpl',
+            'block' => 'base_style',
+            'file' => 'fcpo_base_css_extend'
+        ),
+        array(
+            'template' => 'page/checkout/basket.tpl',
+            'block' => 'checkout_basket_main',
+            'file' => 'fcpo_basket_override'
+        ),
+        array(
+            'template' => 'widget/minibasket/minibasket.tpl',
+            'block' => 'widget_minibasket_total',
+            'file' => 'fcpo_minibasket_total_override',
+        ),
+        array(
+            'template' => 'page/checkout/order.tpl',
+            'block' => 'checkout_order_address',
+            'file' => 'fcpo_order_override'
+        ),
+        array(
+            'template' => 'page/checkout/user.tpl',
+            'block' => 'checkout_user_main',
+            'file' => 'fcpo_user_override'
+        ),
         array(
             'template' => '_formparams.tpl',
             'block' => 'admin_formparams',
@@ -213,7 +245,7 @@ $aModule = array(
         array(
             'template' => 'page/checkout/basket.tpl',
             'block' => 'basket_btn_next_bottom',
-            'file' => 'fcpo_basket_btn_next',
+            'file' => 'fcpo_basket_btn_next_bottom',
         ),
         array(
             'template' => 'page/checkout/basket.tpl',

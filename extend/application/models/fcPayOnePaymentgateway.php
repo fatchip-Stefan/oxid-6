@@ -52,7 +52,7 @@ class fcPayOnePaymentgateway extends fcPayOnePaymentgateway_parent
     /**
      * Setter for last error number
      * 
-     * @param  int $iLastErrorNr
+     * @param int $iLastErrorNr
      * @return void
      */
     public function fcSetLastErrorNr($iLastErrorNr) 
@@ -64,7 +64,7 @@ class fcPayOnePaymentgateway extends fcPayOnePaymentgateway_parent
     /**
      * Setter for last error text
      * 
-     * @param  int $sLastError
+     * @param int $sLastError
      * @return void
      */
     public function fcSetLastError($sLastError) 

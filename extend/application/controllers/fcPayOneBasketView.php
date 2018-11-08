@@ -54,6 +54,28 @@ class fcPayOneBasketView extends fcPayOneBasketView_parent
     }
 
     /**
+     * Returns basket error message if there is some. false if none
+     *
+     * @param void
+     * @return mixed string|bool
+     */
+    public function fcpoGetBasketErrorMessage() {
+        $mReturn = false;
+        $sMessage = $this->_oFcpoHelper->fcpoGetRequestParameter('fcpoerror');
+        if ($sMessage) {
+            $oLang = $this->_oFcpoHelper->fcpoGetLang();
+            $sMessage = urldecode($sMessage);
+            $sMessage = $oLang->translateString($sMessage);
+            $mReturn = $sMessage;
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('payerrortext');
+            $this->_oFcpoHelper->fcpoDeleteSessionVariable('payerror');
+        }
+
+        return $mReturn;
+    }
+
+    /**+
+     *
      * Returns wether paypal express is active or not
      * 
      * @param  void
