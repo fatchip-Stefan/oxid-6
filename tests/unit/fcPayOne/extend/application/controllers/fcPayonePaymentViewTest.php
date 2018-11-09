@@ -1304,8 +1304,18 @@ class Unit_fcPayOne_Extend_Application_Controllers_fcPayOnePaymentView extends O
      */
     public function test__fcpoKlarnaUpdateUser_Coverage()
     {
-        $oMockUser = $this->getMock('oxUser', array('getSelectedAddressId'));
-        $oMockUser->expects($this->any())->method('getSelectedAddressId')->will($this->returnValue('someAddressId'));
+        $oMockUser = $this->getMock('oxUser', array(
+            'getSelectedAddressId',
+            'save',
+        ));
+        $oMockUser
+            ->expects($this->any())
+            ->method('getSelectedAddressId')
+            ->will($this->returnValue('someAddressId'));
+        $oMockUser
+            ->expects($this->any())
+            ->method('save')
+            ->will($this->returnValue(true));
 
         $oMockAddress = $this->getMock('oxAddress', array('load', 'save'));
         $oMockAddress->expects($this->any())->method('load')->will($this->returnValue(true));
@@ -2774,173 +2784,24 @@ class Unit_fcPayOne_Extend_Application_Controllers_fcPayOnePaymentView extends O
         $this->assertEquals('DE987654321', $oTestObject->_fcpoGetRequestedUstid($aMockData, $sMockPaymentId));
     }
 
-    /**
-     * Testing _fcpoSaveUserData for coverage
-     */
-    public function test__fcpoSaveUserData_Coverage() {
-        $aMockRequestedValues = array('some', 'data');
-        $sMockPaymentId = 'somePaymentId';
-        $sMockDbFieldName = 'someDbField';
-
-        $oTestObject = $this->getMock('fcPayOnePaymentView', array(
-            'fcpoGetUserValue',
-            '_fcpoSetUserValue',
-            '_fcpoGetRequestedValue',
-        ));
-        $oTestObject->expects($this->any())->method('fcpoGetUserValue')->will($this->returnValue('userValue'));
-        $oTestObject->expects($this->any())->method('_fcpoSetUserValue')->will($this->returnValue(null));
-        $oTestObject->expects($this->any())->method('_fcpoGetRequestedValue')->will($this->returnValue($aMockRequestedValues));
-
-        $oHelper = $this->getMockBuilder('fcpohelper')->disableOriginalConstructor()->getMock();
-        $oHelper->expects($this->any())->method('fcpoGetRequestParameter')->will($this->returnValue('requestedValue'));
-        $this->invokeSetAttribute($oTestObject, '_oFcpoHelper', $oHelper);
-
-
-        $this->assertEquals(true, $oTestObject->_fcpoSaveUserData($aMockRequestedValues, $sMockPaymentId, $sMockDbFieldName));
-    }
-
-    /**
-     * Testing _fcpoGetRequestedValue for coverage
-     */
-    public function test__fcpoGetRequestedValue_Coverage() {
+    public function test__fcpoValidateBirthdayData_Coverage()
+    {
         $oTestObject = oxNew('fcPayOnePaymentView');
-        $sMockPaymentId = 'fcpopo_debitnote';
-        $sMockDbFieldName = 'someDBField';
-        $aMockRequestedValues['fcpo_payolution_debitnote_'.$sMockDbFieldName] = 'someValue';
-
-        $this->assertEquals(
-            'someValue',
-            $oTestObject->_fcpoGetRequestedValue(
-                $aMockRequestedValues,
-                $sMockPaymentId,
-                $sMockDbFieldName
-            )
+        $sMockPaymentId = 'fcpopo_bill';
+        $aMockData = array(
+            'fcpo_payolution_bill_birthdate_year' => '1978',
+            'fcpo_payolution_bill_birthdate_month' => '12',
+            'fcpo_payolution_bill_birthdate_day' => '07',
         );
-    }
-
-    /**
-     * Testing _fcpoSaveBirthdayData for success case of saving bdate data
-     */
-    public function test__fcpoSaveBirthdayData_BirthdayRequired() {
-        $aMockRequestedValues = array('some', 'data');
-        $sMockPaymentId = 'somePaymentId';
-
-        $oMockUser = $this->getMock('oxUser', array('save'));
-        $oMockUser->expects($this->any())->method('save')->will($this->returnValue(null));
-
-        $aMockBirthdayValidityCheckResult = array(
-            'blValidBirthdateData'=>true,
-            'blBirthdayRequired'=>true
-        );
-
-        $aMockBirthdate = '1978-12-07';
-
-        $oTestObject = $this->getMock('fcPayOnePaymentView', array(
-            '_fcpoGetUserFromSession',
-            '_fcpoValidateBirthdayData',
-            '_fcpoExtractBirthdateFromRequest',
-        ));
-        $oTestObject->expects($this->any())->method('_fcpoGetUserFromSession')->will($this->returnValue($oMockUser));
-        $oTestObject->expects($this->any())->method('_fcpoValidateBirthdayData')->will($this->returnValue($aMockBirthdayValidityCheckResult));
-        $oTestObject->expects($this->any())->method('_fcpoExtractBirthdateFromRequest')->will($this->returnValue($aMockBirthdate));
 
         $oMockLang = $this->getMock('oxLang', array('translateString'));
-        $oMockLang->expects($this->any())->method('translate')->will($this->returnValue('translatedString'));
+        $oMockLang->expects($this->any())->method('translateString')->will($this->returnValue('someString'));
 
         $oHelper = $this->getMockBuilder('fcpohelper')->disableOriginalConstructor()->getMock();
         $oHelper->expects($this->any())->method('fcpoGetLang')->will($this->returnValue($oMockLang));
-        $oHelper->expects($this->any())->method('fcpoSetSessionVariable')->will($this->returnValue(null));
         $this->invokeSetAttribute($oTestObject, '_oFcpoHelper', $oHelper);
 
-        $this->assertEquals(true, $oTestObject->_fcpoSaveBirthdayData($aMockRequestedValues, $sMockPaymentId));
-    }
-
-    /**
-     * Testing _fcpoSaveBirthdayData in case of invalid birhtday date
-     */
-    public function test__fcpoSaveBirthdayData_InvalidBirthday() {
-        $aMockRequestedValues = array('some', 'data');
-        $sMockPaymentId = 'somePaymentId';
-
-        $oMockUser = $this->getMock('oxUser', array('save'));
-        $oMockUser->expects($this->any())->method('save')->will($this->returnValue(null));
-
-        $aMockBirthdayValidityCheckResult = array(
-            'blValidBirthdateData'=>false,
-            'blBirthdayRequired'=>true
-        );
-
-        $aMockBirthdate = '1978-12-07';
-
-        $oTestObject = $this->getMock('fcPayOnePaymentView', array(
-            '_fcpoGetUserFromSession',
-            '_fcpoValidateBirthdayData',
-            '_fcpoExtractBirthdateFromRequest',
-        ));
-        $oTestObject->expects($this->any())->method('_fcpoGetUserFromSession')->will($this->returnValue($oMockUser));
-        $oTestObject->expects($this->any())->method('_fcpoValidateBirthdayData')->will($this->returnValue($aMockBirthdayValidityCheckResult));
-        $oTestObject->expects($this->any())->method('_fcpoExtractBirthdateFromRequest')->will($this->returnValue($aMockBirthdate));
-
-        $oMockLang = $this->getMock('oxLang', array('translateString'));
-        $oMockLang->expects($this->any())->method('translate')->will($this->returnValue('translatedString'));
-
-        $oHelper = $this->getMockBuilder('fcpohelper')->disableOriginalConstructor()->getMock();
-        $oHelper->expects($this->any())->method('fcpoGetLang')->will($this->returnValue($oMockLang));
-        $oHelper->expects($this->any())->method('fcpoSetSessionVariable')->will($this->returnValue(null));
-        $this->invokeSetAttribute($oTestObject, '_oFcpoHelper', $oHelper);
-
-        $this->assertEquals(false, $oTestObject->_fcpoSaveBirthdayData($aMockRequestedValues, $sMockPaymentId));
-    }
-
-    /**
-     * Testing  _fcpoExtractBirthdateFromRequest in case of payolution payment
-     */
-    public function test__fcpoExtractBirthdateFromRequest_Payolution() {
-        $sMockPaymentId = 'fcpopo_debitnote';
-        $oTestObject = oxNew('fcPayOnePaymentView');
-
-        $aMockRequestValues = array(
-            'fcpo_payolution_debitnote_birthdate_year'=>'1978',
-            'fcpo_payolution_debitnote_birthdate_month'=>'12',
-            'fcpo_payolution_debitnote_birthdate_day'=>'07',
-        );
-
-        $sExpect = "1978-12-07";
-
-        $this->assertEquals($sExpect, $oTestObject->_fcpoExtractBirthdateFromRequest($aMockRequestValues,$sMockPaymentId));
-    }
-
-    /**
-     * Testing _fcpoValidateBirthdayData for validation of payolution payment
-     */
-    public function test__fcpoValidateBirthdayData_Payolution() {
-        $oTestObject = $this->getMock('fcPayOnePaymentView', array(
-            'fcpoShowB2C',
-            '_fcpoValidatePayolutionBirthdayData',
-            '_fcpoValidateSecInvoiceBirthdayData',
-        ));
-        $oTestObject
-            ->expects($this->any())
-            ->method('fcpoShowB2C')
-            ->will($this->returnValue(true));
-        $oTestObject
-            ->expects($this->any())
-            ->method('_fcpoValidatePayolutionBirthdayData')
-            ->will($this->returnValue(true));
-        $oTestObject
-            ->expects($this->any())
-            ->method('_fcpoValidateSecInvoiceBirthdayData')
-            ->will($this->returnValue(true));
-
-        $sMockPaymentId = 'fcpopo_installment';
-        $aRequestedValues = array('some', 'values');
-
-        $aExpect = array(
-            'blValidBirthdateData' => true,
-            'blBirthdayRequired' => true,
-        );
-
-        $this->assertEquals($aExpect, $oTestObject->_fcpoValidateBirthdayData($sMockPaymentId, $aRequestedValues));
+        $this->assertEquals(true, $oTestObject->_fcpoValidateBirthdayData($sMockPaymentId, $aMockData));
     }
 
     /**

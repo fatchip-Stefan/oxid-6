@@ -126,14 +126,6 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     protected $_sPayolutionCurrentErrorMessage = null;
 
     /**
-     * Contains dynvalue list of requested params of payment page (all)
-     *
-     * @var array
-     */
-    protected $_aFcRequestedValues = null;
-
-
-    /**
      * init object construction
      * 
      * @return null
@@ -1866,9 +1858,14 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
      * @return void
      */
     protected function _fcpoPayolutionSaveRequestedValues($sPaymentId) {
-        $blSavedBirthday = $this->_fcpoSaveBirthdayData($sPaymentId);
-        $blSavedUstid = $this->_fcpoSaveUserData($sPaymentId,'oxustid');
-        $blSavedTelephone = $this->_fcpoSaveUserData($sPaymentId, 'oxfon');
+        $aRequestedValues = $this->_oFcpoHelper->fcpoGetRequestParameter('dynvalue');
+        if ($this->_blIsPayolutionInstallmentAjax) {
+            $aRequestedValues = $this->_aAjaxPayolutionParams;
+        }
+
+        $blSavedBirthday = $this->_fcpoSaveBirthdayData($aRequestedValues, $sPaymentId);
+        $blSavedUstid = $this->_fcpoSaveUserData($aRequestedValues, $sPaymentId,'oxustid');
+        $blSavedTelephone = $this->_fcpoSaveUserData($aRequestedValues, $sPaymentId, 'oxfon');
 
         $blSavedData = ($blSavedBirthday || $blSavedUstid || $blSavedTelephone);
 
@@ -1878,13 +1875,14 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     /**
      * Method checks if ustid should be saved and returns if it has saved this data or not
      *
+     * @param $aRequestedValues
      * @param $sPaymentId
      * @return bool
      */
-    protected function _fcpoSaveUserData($sPaymentId, $sDbFieldName) {
+    protected function _fcpoSaveUserData($aRequestedValues, $sPaymentId, $sDbFieldName) {
         $blSavedData = false;
 
-        $sRequestedValue = $this->_fcpoGetRequestedValue($sPaymentId, $sDbFieldName);
+        $sRequestedValue = $this->_fcpoGetRequestedValue($aRequestedValues, $sPaymentId, $sDbFieldName);
         if ($sRequestedValue) {
             $sCurrentValue = $this->fcpoGetUserValue($sDbFieldName);
             $blRefreshValue = ($sCurrentValue != $sRequestedValue);
@@ -1899,11 +1897,12 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
 
     /**
      * Returns value depending on payment or false if this hasn't been set
+     *
+     * @param string $aRequestedValues
      * @param string $sPaymentId
      * @return mixed string/boolean
      */
-    protected function _fcpoGetRequestedValue($sPaymentId, $sDbFieldName) {
-        $aRequestedValues = $this->_fcpoGetRequestedValues();
+    protected function _fcpoGetRequestedValue($aRequestedValues, $sPaymentId, $sDbFieldName) {
         $sFieldNameAddition = str_replace("fcpopo_", "", $sPaymentId);
 
         $mReturn = false;
@@ -1917,76 +1916,37 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     /**
      * Method saves birthday data if needed and returns if it has saved data or not
      *
+     * @param $aRequestedValues
      * @param $sPaymentId
      * @param $sFieldNameAddition
      * @return bool
      */
-    protected function _fcpoSaveBirthdayData($sPaymentId) {
-        $aBirthdayValidation = $this->_fcpoValidateBirthdayData($sPaymentId);
-        $blBirthdayRequired = $aBirthdayValidation['blBirthdayRequired'];
-        if (!$blBirthdayRequired) {
-            $blResult = $this->_fcValidateCompanyData($sPaymentId);
-        } else {
-            $blResult = $this->_fcpoUpdateBirthdayData($aBirthdayValidation);
-        }
-
-        return $blResult;
-    }
-
-    /**
-     * Updating given birthday data of user
-     *
-     * @param array $aBirthdayValidation
-     * @return bool
-     */
-    protected function _fcpoUpdateBirthdayData($aBirthdayValidation) {
+    protected function _fcpoSaveBirthdayData($aRequestedValues, $sPaymentId) {
         $oUser = $this->_fcpoGetUserFromSession();
         $oLang = $this->_oFcpoHelper->fcpoGetLang();
-        $blValidBirthdateData = $aBirthdayValidation['blValidBirthdateData'];
-        $sRequestBirthdate = $aBirthdayValidation['sRequestBirthdate'];
+        $sFieldNameAddition = str_replace("fcpopo_", "", $sPaymentId);
+        $blSavedData = false;
 
-        $blResult = false;
+        $blValidBirthdateData = $this->_fcpoValidateBirthdayData($sPaymentId, $aRequestedValues);
 
         if ($blValidBirthdateData) {
-            $oUser->oxuser__oxbirthdate = new oxField($sRequestBirthdate, oxField::T_RAW);
-            $oUser->save();
-            $blResult = true;
-        } else {
-            $sMessage = $oLang->translateString('FCPO_BIRTHDATE_INVALID');
+            $sRequestBirthdate = $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_year'] . "-" . $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_month'] . "-" . $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_day'];
+            $blRefreshBirthdate = ($sRequestBirthdate != '0000-00-00' && $sRequestBirthdate != '--');
+            if ($blRefreshBirthdate) {
+                $oUser->oxuser__oxbirthdate = new oxField($sRequestBirthdate, oxField::T_RAW);
+                $oUser->save();
+                $blSavedData = true;
+            }
+        }
+        else {
+            $sMessage = $oLang->translateString('FCPO_PAYOLUTION_BIRTHDATE_INVALID');
             $this->_oFcpoHelper->fcpoSetSessionVariable('payerror', -20);
             $this->_oFcpoHelper->fcpoSetSessionVariable('payerrortext', $sMessage);
         }
 
-        return $blResult;
+        return $blSavedData;
     }
 
-    /**
-     * Checks complete company data
-     *
-     * @param $sPaymentId
-     * @return bool
-     */
-    protected function _fcValidateCompanyData($sPaymentId) {
-        $aPayments2Validate = array(
-            'fcpo_secinvoice',
-        );
-
-        $blDeeperValidationNeeded = in_array($sPaymentId, $aPayments2Validate);
-        if (!$blDeeperValidationNeeded) {
-            return true;
-        }
-
-        $blReturn = $this->fcpoIsB2B(true);
-
-        if (!$blReturn) {
-            $oLang = $this->_oFcpoHelper->fcpoGetLang();
-            $sMessage = $oLang->translateString('FCPO_COMPANYDATA_INVALID');
-            $this->_oFcpoHelper->fcpoSetSessionVariable('payerror', -20);
-            $this->_oFcpoHelper->fcpoSetSessionVariable('payerrortext', $sMessage);
-        }
-
-        return $blReturn;
-    }
 
     /**
      * Returns value for ustid depending on payment or false if this hasn't been set
@@ -2011,91 +1971,11 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
      * Checks request data for valid birthday data
      * 
      * @param  string $sPaymentId
+     * @param  array  $aRequestedValues
      * @return boolean
      */
-    protected function _fcpoValidateBirthdayData($sPaymentId)
+    protected function _fcpoValidateBirthdayData($sPaymentId, $aRequestedValues) 
     {
-        $blBirthdayRequired = false;
-
-        // validation
-        switch($sPaymentId) {
-            case 'fcpopo_bill':
-            case 'fcpopo_debitnote':
-            case 'fcpopo_installment':
-                $blB2CMode = $this->fcpoShowPayolutionB2C();
-                $blBirthdayRequired = $blB2CMode;
-                $blValidBirthdateData = $this->_fcpoValidatePayolutionBirthdayData($sPaymentId);
-                break;
-        }
-
-        $sRequestBirthdate = $this->_fcpoExtractBirthdateFromRequest($sPaymentId);
-        $aValidationData = array(
-            'blValidBirthdateData' => $blValidBirthdateData,
-            'blBirthdayRequired' => $blBirthdayRequired,
-            'sRequestBirthdate' => $sRequestBirthdate,
-        );
-
-        return $aValidationData;
-    }
-
-    /**
-     * Extracts birthdate from dynvalue select fields depending on payment
-     *
-     * @param $aRequestedValues
-     * @param $sPaymentId
-     * @return string
-     */
-    protected function _fcpoExtractBirthdateFromRequest($sPaymentId) {
-        $aRequestedValues = $this->_fcpoGetRequestedValues();
-        $sRequestBirthdate = '--';
-        switch($sPaymentId) {
-            case 'fcpopo_bill':
-            case 'fcpopo_debitnote':
-            case 'fcpopo_installment':
-                $sFieldNameAddition = str_replace("fcpopo_", "", $sPaymentId);
-                $sRequestBirthdate = $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_year'] .
-                    "-" . $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_month'] .
-                    "-" . $aRequestedValues['fcpo_payolution_' . $sFieldNameAddition . '_birthdate_day'];
-                break;
-            case 'fcpo_secinvoice':
-                $sRequestBirthdate = $aRequestedValues['fcpo_secinvoice_birthdate_year'] .
-                    "-" . $aRequestedValues['fcpo_secinvoice_birthdate_month'] .
-                    "-" . $aRequestedValues['fcpo_secinvoice_birthdate_day'];
-                break;
-        }
-
-        return $sRequestBirthdate;
-    }
-
-    /**
-     * Returning requested form data values wether via ajax or
-     * direct
-     *
-     * @param void
-     * @return array
-     */
-    protected function _fcpoGetRequestedValues() {
-        if ($this->_aFcRequestedValues === null) {
-            $aRequestedValues = $this->_oFcpoHelper->fcpoGetRequestParameter('dynvalue');
-            if ($this->_blIsPayolutionInstallmentAjax) {
-                $aRequestedValues = $this->_aAjaxPayolutionParams;
-            }
-
-            $this->_aFcRequestedValues = $aRequestedValues;
-        }
-
-        return $this->_aFcRequestedValues;
-    }
-
-    /**
-     * Checks request data to be valid birthday data for given
-     * payolution type payment
-     *
-     * @param string $sPaymentId
-     * @return boolean
-     */
-    protected function _fcpoValidatePayolutionBirthdayData($sPaymentId) {
-        $aRequestedValues = $this->_fcpoGetRequestedValues();
         $oLang = $this->_oFcpoHelper->fcpoGetLang();
         $sChooseString = $oLang->translateString('FCPO_PAYOLUTION_PLEASE SELECT');
         $sFieldNameAddition = str_replace("fcpopo_", "", $sPaymentId);
@@ -2116,7 +1996,6 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
 
         return $blReturn;
     }
-
 
     /**
      * Checks if given payment belongs to payone payolution
@@ -2775,7 +2654,7 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
                 $this->fcpoKlarnaIsDelAddressAdditionNeeded() ||
                 $this->fcpoKlarnaIsGenderNeeded() ||
                 $this->fcpoKlarnaIsPersonalIdNeeded()
-        );
+                );
 
         return $blInfoNeeded;
     }
@@ -3040,56 +2919,24 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     }
 
     /**
-     * Generic method for determine if order is b2b
-     * Can be optionally used in strict mode
-     *
-     * @param $blStrict
-     * @return bool
-     */
-    public function fcpoIsB2B($blStrict=false) {
-        $oUser = $this->getUser();
-
-        $blStrictConditions = (
-            $oUser->oxuser__oxcompany->value &&
-            $oUser->oxuser__oxustid->value
-        );
-
-        $blNormalConditions = (
-            $oUser->oxuser__oxcompany->value ||
-            $oUser->oxuser__oxustid->value
-        );
-
-        $blConditionsFulfilled =
-            ($blStrict) ? $blStrictConditions : $blNormalConditions;
-
-        return $blConditionsFulfilled;
-    }
-
-    /**
-     * Generic method for determine if order is b2c
-     *
-     * @param void
-     * @return bool
-     */
-    public function fcpoIsB2C() {
-        $blIsB2B = $this->fcpoIsB2B();
-        $blReturn = !$blIsB2B;
-
-        return $blReturn;
-    }
-
-    /**
      * Template getter for checking which kind of field should be shown
-     *
-     * @param void
+     * 
+     * @param  void
      * @return bool
      */
-    public function fcpoShowPayolutionB2B() {
-        $oConfig = $this->getConfig();
+    public function fcpoShowB2B() 
+    {
+        $oConfig = $this->_oFcpoHelper->fcpoGetConfig();
+        $oUser = $this->getUser();
         $blB2BModeActive = $oConfig->getConfigParam('blFCPOPayolutionB2BMode');
 
         if ($blB2BModeActive) {
-            $blReturn = $this->fcpoIsB2B();
+            $blCompany = ($oUser->oxuser__oxcompany->value) ? true : false;
+            $blReturn = $blCompany;
+            // check if we already have ustid, then showing is not needed
+            if ($blCompany) {
+                $blReturn = ($oUser->oxuser__oxustid->value) ? false : true;
+            }
         } else {
             $blReturn = false;
         }
@@ -3099,12 +2946,12 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
 
     /**
      * Template getter for checking which kind of field should be shown
-     *
-     * @param void
+     * 
+     * @param  void
      * @return bool
      */
-    public function fcpoShowPayolutionB2C() {
-        $blB2BIsShown = $this->fcpoShowPayolutionB2B();
+    public function fcpoShowB2C() {
+        $blB2BIsShown = $this->fcpoShowB2B();
         $blReturn = !$blB2BIsShown;
 
         return $blReturn;
@@ -3233,10 +3080,7 @@ class fcPayOnePaymentView extends fcPayOnePaymentView_parent
     {
         $oConfig = $this->_oFcpoHelper->fcpoGetConfig();
         $sShopUrl = $oConfig->getShopUrl();
-        $sLink =
-            $sShopUrl .
-            '/modules/fc/fcpayone/lib/fcpopopup_content.php?loadurl=' .
-            $this->_sPayolutionSepaAgreement;
+        $sLink = $sShopUrl . '/modules/fcPayOne/lib/fcpopopup_content.php?loadurl=' . $this->_sPayolutionSepaAgreement;
 
         return $sLink;
     }

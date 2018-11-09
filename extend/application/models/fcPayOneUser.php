@@ -49,7 +49,8 @@ class fcPayOneUser extends fcPayOneUser_parent
     protected function fcpoSetBoni($aResponse) 
     {
         $boni = 100;
-        if ($aResponse['scorevalue']) {
+        if ($aResponse['scorevalue']) {        $oTestObject = oxNew('fcPayOneUser');
+
             $boni = $aResponse['scorevalue'];
         } else {
             $aResponse = $this->_fcpoCheckUseFallbackBoniversum($aResponse);
