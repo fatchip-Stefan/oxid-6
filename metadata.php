@@ -39,6 +39,7 @@ $aModule = array(
     'extend'        => array(
         // controllers
         'basket'                            => 'fc/fcpayone/extend/application/controllers/fcPayOneBasketView',
+        'user'                              => 'fc/fcpayone/extend/application/controllers/fcPayOneUserView',
         'order'                             => 'fc/fcpayone/extend/application/controllers/fcPayOneOrderView',
         'payment'                           => 'fc/fcpayone/extend/application/controllers/fcPayOnePaymentView',
         'thankyou'                          => 'fc/fcpayone/extend/application/controllers/fcPayOneThankyouView',
@@ -78,7 +79,7 @@ $aModule = array(
         // controllers
         'fcpayoneiframe'                    => 'fc/fcpayone/application/controllers/fcpayoneiframe.php',
         // models
-	    'fcpouserflag'                      => 'fc/fcpayone/application/models/fcpouserflag.php',
+	'fcpouserflag'                      => 'fc/fcpayone/application/models/fcpouserflag.php',
         'fcporequestlog'                    => 'fc/fcpayone/application/models/fcporequestlog.php',
         'fcpotransactionstatus'             => 'fc/fcpayone/application/models/fcpotransactionstatus.php',
         'fcpomapping'                       => 'fc/fcpayone/application/models/fcpomapping.php',

@@ -321,7 +321,7 @@ class fcpayone_events
         'fcpopo_debitnote' => 'Paysafe Pay Later™ Lastschrift',
         'fcpopo_installment' => 'Paysafe Pay Later™ Ratenkauf',
         'fcporp_bill' => 'Ratepay Rechnungskauf',
-	    'fcpoamazonpay' => 'AmazonPay',
+	'fcpoamazonpay' => 'AmazonPay',
     );
 
     /**

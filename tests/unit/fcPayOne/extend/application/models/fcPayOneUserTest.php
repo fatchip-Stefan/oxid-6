@@ -67,7 +67,11 @@ class Unit_fcPayOne_Extend_Application_Models_fcPayOneUserTest extends OxidTestC
             'score' => 'R',
         );
 
-        $oTestObject = oxNew('fcPayOneUser');
+        $oTestObject = $this->getMock('fcPayOneUser', array('save'));
+        $oTestObject
+            ->expects($this->any())
+            ->method('save')
+            ->will($this->returnValue(true));
         $oTestObject->oxuser__oxboni = new oxField('');
         $oTestObject->oxuser__fcpobonicheckdate = new oxField('');
 
@@ -83,7 +87,11 @@ class Unit_fcPayOne_Extend_Application_Models_fcPayOneUserTest extends OxidTestC
             'score' => 'R',
         );
 
-        $oTestObject = oxNew('fcPayOneUser');
+        $oTestObject = $this->getMock('fcPayOneUser', array('save'));
+        $oTestObject
+            ->expects($this->any())
+            ->method('save')
+            ->will($this->returnValue(true));
         $oTestObject->oxuser__oxboni = new oxField('');
         $oTestObject->oxuser__fcpobonicheckdate = new oxField('');
 

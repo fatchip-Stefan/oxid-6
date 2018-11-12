@@ -1304,8 +1304,18 @@ class Unit_fcPayOne_Extend_Application_Controllers_fcPayOnePaymentView extends O
      */
     public function test__fcpoKlarnaUpdateUser_Coverage()
     {
-        $oMockUser = $this->getMock('oxUser', array('getSelectedAddressId'));
-        $oMockUser->expects($this->any())->method('getSelectedAddressId')->will($this->returnValue('someAddressId'));
+        $oMockUser = $this->getMock('oxUser', array(
+            'getSelectedAddressId',
+            'save',
+        ));
+        $oMockUser
+            ->expects($this->any())
+            ->method('getSelectedAddressId')
+            ->will($this->returnValue('someAddressId'));
+        $oMockUser
+            ->expects($this->any())
+            ->method('save')
+            ->will($this->returnValue(true));
 
         $oMockAddress = $this->getMock('oxAddress', array('load', 'save'));
         $oMockAddress->expects($this->any())->method('load')->will($this->returnValue(true));
