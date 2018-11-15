@@ -8,7 +8,7 @@
          forceCoversAnnotation="false"
          mapTestClassNameToCoveredClassName="false"
          processIsolation="false"
-         stopOnError="false"
+         stopOnError="true"
          stopOnFailure="false"
          stopOnIncomplete="false"
          stopOnSkipped="false"

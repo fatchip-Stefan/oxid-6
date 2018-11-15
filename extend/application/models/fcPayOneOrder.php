@@ -1327,9 +1327,8 @@ class fcPayOneOrder extends fcPayOneOrder_parent
      *
      * @param array $aResponse
      * @param object $oPayGateway
-     * @return mixed int|bool
      */
-    protected function _fcpoHandleAuthorizationError($aResponse, $oPayGateway) {
+    public function _fcpoHandleAuthorizationError($aResponse, $oPayGateway) {
         $mReturn = false;
         $this->_fcpoFlagOrderPaymentAsRedirect(null);
 
